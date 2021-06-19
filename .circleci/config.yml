@@ -16,8 +16,7 @@ jobs:
         - image: circleci/node:13.8.0
       steps:
         - run: echo world
-          command: |
-            echo $program_id
+               echo $program_id
 workflows:
   # Name the workflow "welcome"
   welcome:
