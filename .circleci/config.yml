@@ -6,11 +6,11 @@ defaults: &dok_common
 # Command
 commands:
   print_pipeline_id:
-    parameter:
+    parameters:
       id:
         type: String
     steps:
-       - run: echo << parameter.id >>
+       - run: echo << parameters.id >>
 #      - run: echo ${CIRCLE_WORKFLOW_ID}
 # Jobs
 jobs:
