@@ -26,7 +26,11 @@ jobs:
     <<: *dok_common
     steps:
       - print_pipeline_id:
-          id: <<pipeline.id>>
+          id: << pipeline.id >>
+      - run:
+          name: on error
+          command: echo "some problem with getting pipeline if"
+          when: on_fail
 
   print_output_from_file:
     <<: *dok_common
