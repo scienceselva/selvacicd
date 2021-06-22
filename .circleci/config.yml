@@ -1,17 +1,21 @@
 version: 2.1
 # anchors and alias
-defaults: &defaults
+defaults: &dok_common
     docker:
       - image: circleci/node:13.8.0
 # Command
 commands:
   print_pipeline_id:
+    parameter:
+      id:
+        type: String
     steps:
-      - run: echo ${CIRCLE_WORKFLOW_ID}
+       - run: echo << parameter.id >>
+#      - run: echo ${CIRCLE_WORKFLOW_ID}
 # Jobs
 jobs:
   save_hello_world_output:
-    <<: *defaults
+    <<: *dok_common
     steps:
       - run: echo "hello world" > ~/output.txt
       - persist_to_workspace:
@@ -19,12 +23,13 @@ jobs:
           paths:
             - output.txt
   my_job:
-    <<: *defaults
+    <<: *dok_common
     steps:
-      - print_pipeline_id
+      - print_pipeline_id:
+          id: <<pipeline.id>>
 
   print_output_from_file:
-    <<: *defaults
+    <<: *dok_common
     steps:
       - attach_workspace:
           at: ~/
