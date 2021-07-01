@@ -48,10 +48,7 @@ parameters:
 commands:
 # ----------------------------------   to destroy the aws infra ----------------------------------------------------------------------------
   destroy-environment:
-    description: Destroy back-end and front-end cloudformation stacks given a workflow ID. 
-    parameters:
-      workflow_id:
-        type: string  
+    description: test the destroy environment
     steps:
       - run:
           name: Destroy environments
@@ -71,7 +68,7 @@ commands:
 
 # ----------------------------------   to reverse the migration   --------------------------------------------------------------------------
   revert-migrations:
-    description: Revert the last migration if successfully run in the current workflow.    
+    description: Revert migration test
     steps:
       - run:
           name: Revert migrations
@@ -88,16 +85,14 @@ commands:
 #  ------------------------------------------------------------------------------------------------------------------------------------------
 
 jobs:
-# -----------------------------  start of smoke testing after deployment  ----------------------------
   test-cmds:
     <<: *dok_ansible    
     environment: 
       MY_STEP_NAME: "Smoke Test"         
     steps:
       - checkout
-      - destroy-environment:
-          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
-      - revert-migrations  
+      - destroy-environment:          
+      - revert-migrations:  
       - slack/notify:
           <<: *slack_msg
 # -------------------------------------------------------------------------------
