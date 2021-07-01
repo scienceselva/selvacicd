@@ -77,8 +77,8 @@ jobs:
     <<: *dok_ansible                 
     steps:
       - checkout
-      - destroy-environment:          
-      - revert-migrations:  
+      - destroy-environment         
+      - revert-migrations
       - slack/notify:
           <<: *slack_msg
 # -------------------------------------------------------------------------------
