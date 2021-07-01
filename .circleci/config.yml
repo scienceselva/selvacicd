@@ -43,10 +43,12 @@ commands:
     steps:
       - run:
           name: Destroy environments          
-          command: |
-            apt-get install -y python3-pip
-            pip install awscli
-            aws --version
+          command: |            
+              apk add --no-cache python3 py3-pip \
+              && pip3 install --upgrade pip \
+              && pip3 install awscli \
+              && rm -rf /var/cache/apk/*
+              aws --version
 
 # ----------------------------------   to reverse the migration   --------------------------------------------------------------------------
   revert-migrations:
@@ -55,7 +57,7 @@ commands:
       - run:
           name: Revert migrations          
           command: |
-              apt-get install nodejs -y
+              apk add --update tar gzip curl nodejs npm              
               npm --version
 #  ------------------------------------------------------------------------------------------------------------------------------------------
 #    Jobs list startd from here    
