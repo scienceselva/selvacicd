@@ -1,51 +1,111 @@
 version: 2.1
-# anchors and alias   ----------------------------------------------------------------------------
-defaults: &dok_common
+
+orbs:
+  slack: circleci/slack@4.4.2
+  aws-cli: circleci/aws-cli@2.0.3
+#  ------------------------------------------------------------------------------------------------------------------------------------------
+#  defaults (like global variables dubstiuted below)
+#  ------------------------------------------------------------------------------------------------------------------------------------------
+docvarnode: &dok_node
     docker:
       - image: circleci/node:13.8.0
-# Command  ---------------------------------------------------------------------------------------
+
+docvaraws: &dok_awscli
+    docker:
+      - image: amazon/aws-cli    
+
+docansibl: &dok_ansible
+    docker:
+      - image: python:3.7-alpine3.11 
+
+slackvarfail: &slack_msg      
+          event: fail
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "fields": [{"type": "plain_text",
+                      "text": "Udapeople build STEP : ${MY_STEP_NAME} Failure #<< pipeline.number >> for << pipeline.project.git_url >> / << pipeline.git.branch >> ",
+                      "emoji": true }]
+                }
+              ]
+            } 
+#  ------------------------------------------------------------------------------------------------------------------------------------------
+#  list of parameters
+#  ------------------------------------------------------------------------------------------------------------------------------------------
+
+parameters:
+  workflow-id:
+    type: string
+    default: "${CIRCLE_WORKFLOW_ID}"
+
+#  ------------------------------------------------------------------------------------------------------------------------------------------
+#  list of commands used in job 
+#
+#  ------------------------------------------------------------------------------------------------------------------------------------------
+
 commands:
-  print_pipeline_id:
+# ----------------------------------   to destroy the aws infra ----------------------------------------------------------------------------
+  destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID. 
     parameters:
-      id:
-        type: string
+      workflow_id:
+        type: string  
     steps:
-       - run: echo << parameters.id >>
-#      - run: echo ${CIRCLE_WORKFLOW_ID}
-# Jobs   -----------------------------------------------------------------------------------------
-jobs:
-  save_hello_world_output:
-    <<: *dok_common
-    steps:
-      - run: echo "hello world" > ~/output.txt
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - output.txt
-  my_job:
-    <<: *dok_common
-    steps:
-      - print_pipeline_id:
-          id: << pipeline.id >>
       - run:
-          name: on error
-          command: echo "some problem with getting pipeline if"
+          name: Destroy environments
           when: on_fail
+          command: |
+            pip=$(sudo /root/.local/bin/pip -V | cut -c 1-3)
+            if [[ pip != "pip" ]]; then
+                apt-get install sudo
+                echo "Installing pip..."
+                curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+                sudo /workplace/user/package/src/EnvImprovement/bin/python2.7 get-pip.py --user
+            else
+                echo "Pip detected."
+            fi                        
+            pip install awscli --upgrade --user
+            aws --version
 
-  print_output_from_file:
-    <<: *dok_common
+# ----------------------------------   to reverse the migration   --------------------------------------------------------------------------
+  revert-migrations:
+    description: Revert the last migration if successfully run in the current workflow.    
     steps:
-      - attach_workspace:
-          at: ~/
-      - run: cat ~/output.txt
+      - run:
+          name: Revert migrations
+          when: on_fail
+          command: |
+              apt-get install nodejs -y
+              npm --version
+              
 
-# Work flow   ------------------------------------------------------------------------------------
+#  ------------------------------------------------------------------------------------------------------------------------------------------
+#    Jobs list startd from here    
+#
+#
+#  ------------------------------------------------------------------------------------------------------------------------------------------
 
+jobs:
+# -----------------------------  start of smoke testing after deployment  ----------------------------
+  test-cmds:
+    <<: *dok_ansible    
+    environment: 
+      MY_STEP_NAME: "Smoke Test"         
+    steps:
+      - checkout
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - revert-migrations  
+      - slack/notify:
+          <<: *slack_msg
+# -------------------------------------------------------------------------------
+#
+#         WORKFLOW  STEPS STARTS FROM HERE
+#
+# -------------------------------------------------------------------------------
 workflows:
-  my_workflow:
+  default:
     jobs:
-      - save_hello_world_output
-      - print_output_from_file:
-          requires:
-            - save_hello_world_output              
-      - my_job
+      - test-cmds:
