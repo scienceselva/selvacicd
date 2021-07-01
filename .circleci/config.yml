@@ -42,8 +42,7 @@ commands:
     description: test the destroy environment
     steps:
       - run:
-          name: Destroy environments
-          when: on_fail
+          name: Destroy environments          
           command: |
             pip=$(sudo /root/.local/bin/pip -V | cut -c 1-3)
             if [[ pip != "pip" ]]; then
@@ -62,8 +61,7 @@ commands:
     description: Revert migration test
     steps:
       - run:
-          name: Revert migrations
-          when: on_fail
+          name: Revert migrations          
           command: |
               apt-get install nodejs -y
               npm --version
